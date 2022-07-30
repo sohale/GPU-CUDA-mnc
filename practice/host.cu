@@ -36,7 +36,7 @@ int main()
     const int TS = sizeof(*gpu_ptr);
     // const int N = 1000;
     cudaMalloc(output_ptr(gpu_ptr), N * TS);
-    cudaMemcpy(gpu_ptr, /*src*/cpu_ptr, N * TS, cudaMemcpyDeviceToHost);
+    cudaMemcpy(gpu_ptr, /*src*/cpu_ptr, N * TS, cudaMemcpyHostToDevice);
 
        /* which is used? (1,1) versus N? */
        cuda_hello<<<1, 1>>>(gpu_ptr);
