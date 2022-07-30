@@ -9,7 +9,8 @@ __global__ void cuda_hello(float *gpu_ptr, int n)
     // printf("Hello World from GPU!\n");
     for (int i = 0; i < n; i++)
     {
-        gpu_ptr[i] *= 1.5;
+        // gpu_ptr[i] *= 1.5;
+        gpu_ptr[i] = i;
     }
 }
 
@@ -64,6 +65,7 @@ int main()
     cudaMemcpy(gpu_ptr, /*src*/cpu_ptr, N * TS, cudaMemcpyHostToDevice);
 
        printf("\n (p2) sum = %f\n", sum_elements(cpu_ptr, N));
+       printf("cuda\n");
        /* which is used? (1,1) versus N? */
        cuda_hello<<<1, 1>>>(gpu_ptr, (int)N);
 
