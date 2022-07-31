@@ -13,4 +13,4 @@ Changes log:
 * Attempted to use AWS GPU instances (The AWS instance didn't actually have the GPU)
 * Attempted GCP instances (failed)
 * Wrote pure cuda based host (instead of Matlab host) code
-* Change of main branch `git config --global init.defaultBranch working-2022`
+* Change of default branch
