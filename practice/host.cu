@@ -46,7 +46,7 @@ __global__ void cuda_process_parallel(float *gpu_ptr, int n)
     const int ny = gridDim.x;  // 4?
     // 1
 
-    // This is not the hardware strucutre, but the "call" (execusion/orchestration) structure ie <<,>>
+    // ^ This is not the hardware strucutre, but the "call" (execusion/orchestration) structure ie <<,>>
 
     // threadIdx.x < blockDim.x = 256
     // blockIdx.x < gridDim.x = 4 (?)
@@ -55,7 +55,6 @@ __global__ void cuda_process_parallel(float *gpu_ptr, int n)
     // (xi, yi)  ∈  256 × 4
 
     // const int tid = blockIdx.x * blockDim.x + threadIdx.x;
-    const int tid = yi * nx + xi;
 
     /*
     const int xi    = threadIdx.x;
@@ -79,9 +78,8 @@ __global__ void cuda_process_parallel(float *gpu_ptr, int n)
 
     // const int tid =  ( (0) * gridDim.x + blockIdx.x) * blockDim.x + threadIdx.x;
     // equivalently:
-    // const int tid = yi * nx + xi;
+    const int tid = yi * nx + xi;
 
-    // if (tid < n) {}
     // only if single-block: // if (ny==1):
     //int stride = nx;
     //int begin = xi;
