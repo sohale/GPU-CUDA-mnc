@@ -75,13 +75,13 @@ __global__ void cuda_process_parallel(float *gpu_ptr, int n)
     // const int tid = yi * nx + xi;
 
     // if (tid < n) {}
-    // if (ny==1):
+    // only if single-block: // if (ny==1):
     int stride = nx;
     int begin = xi;
     for (int i = begin; i < n; i += stride)
     {
-        // gpu_ptr[i] *= 1.5f;
-        gpu_ptr[i] = (float)i;
+        gpu_ptr[i] *= 1.5f;
+        // gpu_ptr[i] = (float)i;
     }
 
     // process1(gpu_ptr, n);
