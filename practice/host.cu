@@ -30,6 +30,14 @@ void process1(ElemType *gpu_ptr, SizeT n)
     }
 }
 
+/*
+Three classes of arguments:
+    1. explicit arguments (common value)
+    2. implicit instance-specific threadIdx. blockIdx. blockDim. gridDim.
+    3. implicit (explicit in call) <<,>> args
+
+    all are different to `strcutural`
+*/
 // sample input args to all kernel executions
 __global__ void cuda_process_parallel(float *gpu_ptr, int n)
 {
