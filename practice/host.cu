@@ -146,7 +146,9 @@ int main()
     printf("cuda\n");
 
     /* which is used? (1,1) versus N? */
-    cuda_simple<<<1, 1>>>(gpu_ptr, (int)N);
+    const int grid_size = 1;
+    const int block_size = 1;
+    cuda_simple<<<grid_size, block_size>>>(gpu_ptr, (int)N);
 
     printf("\n (p3) sum = %f\n", sum_elements(cpu_ptr, N));
 
