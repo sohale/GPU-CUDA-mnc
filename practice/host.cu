@@ -3,6 +3,11 @@ const int N = 1000; // can we have a shared const on both host and device?
 
 const float dT = 0.001f;
 
+
+constexpr struct {
+    unsigned int block_size = 256;
+} strcutural;
+
 __global__ void cuda_simple(float *gpu_ptr, int n)
 {
     // inplace
@@ -41,6 +46,8 @@ __global__ void cuda_process_parallel(float *gpu_ptr, int n)
     const int ny = gridDim.x;  // 4?
     // 1
 
+    // This is not the hardware strucutre, but the "call" (execusion/orchestration) structure ie <<,>>
+
     // threadIdx.x < blockDim.x = 256
     // blockIdx.x < gridDim.x = 4 (?)
     // xi < nx
@@ -76,8 +83,14 @@ __global__ void cuda_process_parallel(float *gpu_ptr, int n)
 
     // if (tid < n) {}
     // only if single-block: // if (ny==1):
-    int stride = nx;
-    int begin = xi;
+    //int stride = nx;
+    //int begin = xi;
+
+    // level beyond the call <<,>> args :
+    int stride = nx * ny;
+    int begin = tid;
+
+    if (begin < n)
     for (int i = begin; i < n; i += stride)
     {
         gpu_ptr[i] *= 1.5f;
@@ -145,9 +158,9 @@ int main()
     printf("\n (p2) sum = %f\n", sum_elements(cpu_ptr, N));
     printf("cuda\n");
 
+    const int block_size = strcutural.block_size;
+    const int grid_size = static_cast<int>( N / block_size + 1);
     /* which is used? (1,1) versus N? */
-    const int grid_size = 1;
-    const int block_size = 1;
     cuda_simple<<<grid_size, block_size>>>(gpu_ptr, (int)N);
 
     printf("\n (p3) sum = %f\n", sum_elements(cpu_ptr, N));
