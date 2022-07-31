@@ -3,7 +3,7 @@ const int N = 1000; // can we have a shared const on both host and device?
 
 const float dT = 0.001;
 
-__global__ void cuda_hello(float *gpu_ptr, int n)
+__global__ void cuda_simple(float *gpu_ptr, int n)
 {
     // inplace
     // printf("Hello World from GPU!\n");
@@ -66,8 +66,9 @@ int main()
 
        printf("\n (p2) sum = %f\n", sum_elements(cpu_ptr, N));
        printf("cuda\n");
+
        /* which is used? (1,1) versus N? */
-       cuda_hello<<<1, 1>>>(gpu_ptr, (int)N);
+       cuda_simple<<<1, 1>>>(gpu_ptr, (int)N);
 
        printf("\n (p3) sum = %f\n", sum_elements(cpu_ptr, N));
 
