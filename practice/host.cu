@@ -8,102 +8,106 @@ constexpr struct {
     unsigned int block_size = 256;
 } strcutural;
 
+// inplace
 __global__ void cuda_simple(float *gpu_ptr, int n)
 {
-    // inplace
-    // printf("Hello World from GPU!\n");
     for (int i = 0; i < n; i++)
     {
-        // gpu_ptr[i] *= 1.5f;
-        gpu_ptr[i] = (float)i;
-    }
-}
-
-// inplace
-template <typename ElemType, typename SizeT>
-void process1(ElemType *gpu_ptr, SizeT n)
-{
-    for (SizeT i = 0; i < n; i++)
-    {
-        // gpu_ptr[i] *= 1.5f;
+        gpu_ptr[i] *= 1.5f;
         gpu_ptr[i] = (float)i;
     }
 }
 
 /*
-Three classes of arguments:
-    1. explicit arguments (common value)
-    2. implicit instance-specific threadIdx. blockIdx. blockDim. gridDim.
-    3. implicit (explicit in call) <<,>> args
-
-    all are different to `strcutural`
+Problem:
+    identifier "process1<float, int> " is undefined in device code
 */
-// sample input args to all kernel executions
+// A unit of work, most fine-grained parallelisable unit of execusion:
+// inplace
+template <typename ElemType, typename SizeT>
+void process1(ElemType *gpu_ptr, SizeT i)
+{
+    gpu_ptr[i] *= 1.5f;
+    // gpu_ptr[i] = (float)i;
+}
+
+
+/*
+Three classes of arguments:
+1. class I. explicit arguments (common value): input args to all kernel executions -- (gpu_ptr, n)
+2. class II. implicit instance-specific -- (threadIdx blockIdx)
+3. class III. implicit (explicit in call) <<,>> args -- (blockDim. gridDim)
+
+4. `strcutural`: All above are different to `strcutural`. Use to fine-tune hardware (to select and fine-tune class III)
+*/
+// inplace
 __global__ void cuda_process_parallel(float *gpu_ptr, int n)
 {
-    // inplace
+    // class I: (gpu_ptr,n)
 
-    // (xi, yi)  ∈  nx × ny
-    // 0,(xi, yi),0  ∈  ℝ^[ 1 × nx × ny ]
-    const int xi = threadIdx.x;
-    const int yi = blockIdx.x;
-    // const int zi = gridIdx.x = 0;
+    // class II:
+    const int xi   = threadIdx.x;
+    const int yi   = blockIdx.x;
+    // const int zi = gridIdx.x = 0;  // undefined
+    // 0
+    // 0
 
+    // class III: The <<,>> args
     // threadDim.x = 1
     const int nx = blockDim.x; // 256
-    const int ny = gridDim.x;  // 4?
+    const int ny = gridDim.x;  // 4
+    // const int nz = nextDim.x;  // 1  // undefined
+    // 1
     // 1
 
-    // ^ This is not the hardware strucutre, but the "call" (execusion/orchestration) structure ie <<,>>
-
-    // threadIdx.x < blockDim.x = 256
-    // blockIdx.x < gridDim.x = 4 (?)
-    // xi < nx
-    // yi < ny
-    // (xi, yi)  ∈  256 × 4
-
-    // const int tid = blockIdx.x * blockDim.x + threadIdx.x;
+    // ^ These are not the hardware strucutres, but the "call" (execusion/orchestration) structure ie <<,>>
 
     /*
-    const int xi    = threadIdx.x;
-    const int yi    = blockIdx.x;
-    // const int zi  = gridIdx.x = 0;  // undefined
-    // 0
-    // 0
+    Invariants:
+        threadIdx.x < blockDim.x = 256
+        xi < nx
+        blockIdx.x < gridDim.x = 4
+        yi < ny
+    Meaning:
+       (xi, yi)  ∈  256 × 4
 
-    // threadDim.x := 1
-    const int nx = blockDim.x; // 256
-    const int ny = gridDim.x;  // 4?
-    const int nz = nextDim.x;  // 1  // undefined
-    // 1
-    // 1
+       (xi, yi)  ∈  nx × ny
+    Generalization:
+       0,(xi, yi),0,0, …  ∈  ℝ^[  1 × nx × ny × 1 × … ]
+                                  1 × 256 × 4 × 1 × …
 
-    int tid =  ( gridIdx.x * gridDim.x + blockIdx.x) * blockDim.x + threadIdx.x
-    const int tid =  ( (0 + gridIdx.x) * gridDim.x + blockIdx.x) * blockDim.x + threadIdx.x;
-    int tid =  ( ( (0) * nextDim.x + gridIdx.x) * gridDim.x + blockIdx.x) * blockDim.x + threadIdx.x * 1
-    int tid =  1 * (threadIdx.x +  blockDim.x * (  blockIdx.x + gridDim.x * ( gridIdx.x +  nextDim.x * (0) ) ));
     */
 
-    // const int tid =  ( (0) * gridDim.x + blockIdx.x) * blockDim.x + threadIdx.x;
-    // equivalently:
+    // Coordinate executions: Find your share of execution (your scope)
+
+    // The scope of this (current) kernel / gpu core thread: (also region of interest or gpu memory)
     const int tid = yi * nx + xi;
+    /*
+    const int tid =
+                                                                             yi * nx + xi;
+                                                    blockIdx.x * blockDim.x + threadIdx.x;
+                               ( (0) * gridDim.x + blockIdx.x) * blockDim.x + threadIdx.x;
+                  ( ( 0 + gridIdx.x) * gridDim.x + blockIdx.x) * blockDim.x + threadIdx.x;
+    ( ( (0) * nextDim.x + gridIdx.x) * gridDim.x + blockIdx.x) * blockDim.x + threadIdx.x * 1
+    1 * (threadIdx.x +  blockDim.x * (  blockIdx.x + gridDim.x * ( gridIdx.x +  nextDim.x * (0) ) ));
+    */
 
-    // only if single-block: // if (ny==1):
-    //int stride = nx;
-    //int begin = xi;
+    /*
+      Only if single-block (ny==1):
+      int begin = xi, stride = nx;
+    */
 
-    // level beyond the call <<,>> args :
+    // `stride`: One level beyond the call <<,>> args : The shortcomings have to be compensated by single kernel-threads using `stride`:
     int stride = nx * ny;
     int begin = tid;
 
     if (begin < n)
     for (int i = begin; i < n; i += stride)
     {
+        // Execute a single logical thread's process
+        // process1<float, int>(gpu_ptr, i);
         gpu_ptr[i] *= 1.5f;
-        // gpu_ptr[i] = (float)i;
     }
-
-    // process1(gpu_ptr, n);
 }
 
 void cpu_process(float *cpu_ptr, int n)
