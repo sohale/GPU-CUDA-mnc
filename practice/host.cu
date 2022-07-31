@@ -1,7 +1,7 @@
 #include <stdio.h>
 const int N = 1000; // can we have a shared const on both host and device?
 
-const float dT = 0.001;
+const float dT = 0.001f;
 
 __global__ void cuda_simple(float *gpu_ptr, int n)
 {
@@ -12,6 +12,49 @@ __global__ void cuda_simple(float *gpu_ptr, int n)
         // gpu_ptr[i] *= 1.5;
         gpu_ptr[i] = i;
     }
+}
+
+// inplace
+template<typename ElemType, typename SizeT>
+void process1(ElemType * gpu_ptr, SizeT n) {
+    for (SizeT i = 0; i < n; i++)
+    {
+        // gpu_ptr[i] *= 1.5;
+        gpu_ptr[i] = i;
+    }
+}
+
+// sample input args to all kernel executions
+__global__ void cuda_process_parallel(float *gpu_ptr, int n)
+{
+    // inplace
+
+    // (xi, yi)  ∈  nx × ny
+    const xi = threadIdx.x;
+    const yi = blockIdx.x;
+    const nx = blockDim.x;  // 256
+    const ny = gridDim.x;   // 4?
+
+    // threadIdx.x < blockDim.x = 256
+    // blockIdx.x < gridDim.x = 4 (?)
+    // xi < nx
+    // yi < ny
+    // (xi, yi)  ∈  256 × 4
+
+    // const int tid = blockIdx.x * blockDim.x + threadIdx.x;
+    const int tid = yi * nx + xi;
+
+    // if (tid < n) {}
+    // if (ny==1):
+    int stride = nx;
+    int begin = xi;
+    for (int i = begin; i < n; i+=stride)
+    {
+        // gpu_ptr[i] *= 1.5;
+        gpu_ptr[i] = i;
+    }
+
+    // process1(gpu_ptr, n);
 }
 
 void cpu_process(float *cpu_ptr, int n)
