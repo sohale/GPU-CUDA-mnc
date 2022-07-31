@@ -9,8 +9,8 @@ __global__ void cuda_simple(float *gpu_ptr, int n)
     // printf("Hello World from GPU!\n");
     for (int i = 0; i < n; i++)
     {
-        // gpu_ptr[i] *= 1.5;
-        gpu_ptr[i] = i;
+        // gpu_ptr[i] *= 1.5f;
+        gpu_ptr[i] = (float)i;
     }
 }
 
@@ -19,8 +19,8 @@ template<typename ElemType, typename SizeT>
 void process1(ElemType * gpu_ptr, SizeT n) {
     for (SizeT i = 0; i < n; i++)
     {
-        // gpu_ptr[i] *= 1.5;
-        gpu_ptr[i] = i;
+        // gpu_ptr[i] *= 1.5f;
+        gpu_ptr[i] = (float)i;
     }
 }
 
@@ -30,10 +30,10 @@ __global__ void cuda_process_parallel(float *gpu_ptr, int n)
     // inplace
 
     // (xi, yi)  ∈  nx × ny
-    const xi = threadIdx.x;
-    const yi = blockIdx.x;
-    const nx = blockDim.x;  // 256
-    const ny = gridDim.x;   // 4?
+    const int xi = threadIdx.x;
+    const int yi = blockIdx.x;
+    const int nx = blockDim.x;  // 256
+    const int ny = gridDim.x;   // 4?
 
     // threadIdx.x < blockDim.x = 256
     // blockIdx.x < gridDim.x = 4 (?)
@@ -50,8 +50,8 @@ __global__ void cuda_process_parallel(float *gpu_ptr, int n)
     int begin = xi;
     for (int i = begin; i < n; i+=stride)
     {
-        // gpu_ptr[i] *= 1.5;
-        gpu_ptr[i] = i;
+        // gpu_ptr[i] *= 1.5f;
+        gpu_ptr[i] = (float)i;
     }
 
     // process1(gpu_ptr, n);
@@ -62,14 +62,14 @@ void cpu_process(float *cpu_ptr, int n)
     // inplace
     for (int i = 0; i < n; i++)
     {
-        cpu_ptr[i] *= 1.5;
+        cpu_ptr[i] *= 1.5f;
     }
 }
 
 #define output_ptr(gpu_ptr) ((void **)&gpu_ptr)
 
 float sum_elements(float* cpu_ptr, int n) {
-    float sum = 0;
+    float sum = 0.0f;
     for(int i = 0; i < n; i++) {
         sum += dT * cpu_ptr[i];
     }
@@ -91,11 +91,11 @@ int main()
 {
     float* cpu_ptr = (float*)malloc(N * sizeof(float));
 
-    float f = 10.0;
-    float pi2 = 2 * 3.141592653589793238 * f;
+    float f = 10.0f;
+    float pi2 = 2 * 3.141592653589793238f * f;
     for(int i = 0; i < N; i++) {
         float t = i * dT;
-	cpu_ptr[i] = sin(t * pi2 * f) * 10000.0;
+	cpu_ptr[i] = sin(t * pi2 * f) * 10000.0f;
     }
     cpu_print_elements(cpu_ptr, -10, "initial    ");
     printf("\n (pre) sum = %f\n", sum_elements(cpu_ptr, N));
