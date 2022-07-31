@@ -9,3 +9,5 @@ docker run \
             mvncdf_kernel.cu \
             practice/host.cu \
             -o ./build/output.out
+
+# nvprof
