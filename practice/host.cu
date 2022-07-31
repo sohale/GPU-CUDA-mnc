@@ -31,10 +31,15 @@ __global__ void cuda_process_parallel(float *gpu_ptr, int n)
     // inplace
 
     // (xi, yi)  ∈  nx × ny
+    // 0,(xi, yi),0  ∈  ℝ^[ 1 × nx × ny ]
     const int xi = threadIdx.x;
     const int yi = blockIdx.x;
+    // const int zi = gridIdx.x = 0;
+
+    // threadDim.x = 1
     const int nx = blockDim.x; // 256
     const int ny = gridDim.x;  // 4?
+    // 1
 
     // threadIdx.x < blockDim.x = 256
     // blockIdx.x < gridDim.x = 4 (?)
@@ -44,6 +49,30 @@ __global__ void cuda_process_parallel(float *gpu_ptr, int n)
 
     // const int tid = blockIdx.x * blockDim.x + threadIdx.x;
     const int tid = yi * nx + xi;
+
+    /*
+    const int xi    = threadIdx.x;
+    const int yi    = blockIdx.x;
+    // const int zi  = gridIdx.x = 0;  // undefined
+    // 0
+    // 0
+
+    // threadDim.x := 1
+    const int nx = blockDim.x; // 256
+    const int ny = gridDim.x;  // 4?
+    const int nz = nextDim.x;  // 1  // undefined
+    // 1
+    // 1
+
+    int tid =  ( gridIdx.x * gridDim.x + blockIdx.x) * blockDim.x + threadIdx.x
+    const int tid =  ( (0 + gridIdx.x) * gridDim.x + blockIdx.x) * blockDim.x + threadIdx.x;
+    int tid =  ( ( (0) * nextDim.x + gridIdx.x) * gridDim.x + blockIdx.x) * blockDim.x + threadIdx.x * 1
+    int tid =  1 * (threadIdx.x +  blockDim.x * (  blockIdx.x + gridDim.x * ( gridIdx.x +  nextDim.x * (0) ) ));
+    */
+
+    // const int tid =  ( (0) * gridDim.x + blockIdx.x) * blockDim.x + threadIdx.x;
+    // equivalently:
+    // const int tid = yi * nx + xi;
 
     // if (tid < n) {}
     // if (ny==1):
